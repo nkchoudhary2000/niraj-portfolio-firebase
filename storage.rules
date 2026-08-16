@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Portfolio item thumbnails folder
+    match /portfolio_thumbnails/{userId}/{allPaths=**} {
+      allow read: if true;
+      // Allow creation/upload if user is authenticated and uploading to their own directory, or is admin
+      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.admin == true);
+    }
+
+    // Default rule for all other paths
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
