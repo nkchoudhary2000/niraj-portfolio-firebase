@@ -2,18 +2,18 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Your real Web App Firebase configuration
+// Web App Firebase configuration sourced securely from environment variables (.env)
 const firebaseConfig = {
-  apiKey: "AIzaSyAdoq2Yy7cj5dwhUJBxEJx2vv3eSOAZn8k",
-  authDomain: "niraj-portfolio-a7011.firebaseapp.com",
-  projectId: "niraj-portfolio-a7011",
-  storageBucket: "niraj-portfolio-a7011.firebasestorage.app",
-  messagingSenderId: "875063736113",
-  appId: "1:875063736113:web:fed37b897ec2e71a4e6210",
-  measurementId: "G-6RM3HBL0W0"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase App
+// Initialize Firebase App singleton
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Export Auth, Firestore, and Google Provider for app components
