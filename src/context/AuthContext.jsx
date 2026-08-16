@@ -51,6 +51,13 @@ export const AuthProvider = ({ children }) => {
         }
 
         const assignedRole = isFirstUser ? 'admin' : 'user';
+        const defaultPrivileges = {
+          canAddProject: isFirstUser,
+          canEditProject: isFirstUser,
+          canDeleteProject: isFirstUser,
+          canManageCategories: isFirstUser,
+          canManageTheme: isFirstUser
+        };
 
         const newProfile = {
           uid: user.uid,
@@ -58,6 +65,7 @@ export const AuthProvider = ({ children }) => {
           displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
           photoURL: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
           role: assignedRole,
+          privileges: defaultPrivileges,
           createdAt: new Date().toISOString()
         };
 
@@ -70,7 +78,14 @@ export const AuthProvider = ({ children }) => {
         uid: user.uid,
         email: user.email || '',
         displayName: user.displayName || 'User',
-        role: 'user'
+        role: 'user',
+        privileges: {
+          canAddProject: false,
+          canEditProject: false,
+          canDeleteProject: false,
+          canManageCategories: false,
+          canManageTheme: false
+        }
       });
     }
   };
@@ -128,11 +143,18 @@ export const AuthProvider = ({ children }) => {
     return signOut(auth);
   };
 
+  const hasPermission = (permissionKey) => {
+    if (!currentUser) return false;
+    if (userProfile?.role === 'admin') return true;
+    return !!(userProfile?.privileges && userProfile.privileges[permissionKey]);
+  };
+
   const value = {
     currentUser,
     userProfile,
     isAdmin: userProfile?.role === 'admin',
     initialLoading,
+    hasPermission,
     signUpWithEmail,
     loginWithEmail,
     loginWithGoogle,

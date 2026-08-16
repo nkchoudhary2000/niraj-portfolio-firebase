@@ -8,7 +8,9 @@ import {
   LayoutGrid, 
   Sliders,
   Sun,
-  Moon
+  Moon,
+  Clock,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -17,10 +19,24 @@ export default function Navbar({
   activeTab, 
   setActiveTab, 
   onOpenAuth, 
-  onOpenAddModal 
+  onOpenAddModal,
+  onOpenMyRequests,
+  onRequestPermission
 }) {
-  const { currentUser, userProfile, isAdmin, logout } = useAuth();
+  const { currentUser, userProfile, isAdmin, hasPermission, logout } = useAuth();
   const { theme, toggleMode } = useTheme();
+
+  const handleAddProjectClick = () => {
+    if (!currentUser) {
+      onOpenAuth();
+      return;
+    }
+    if (hasPermission('canAddProject')) {
+      onOpenAddModal();
+    } else {
+      onRequestPermission('canAddProject', 'Request Permission to Add Projects');
+    }
+  };
 
   return (
     <header className={`sticky top-0 z-40 w-full transition-colors ${
@@ -82,7 +98,19 @@ export default function Navbar({
             </button>
           )}
 
-          {/* Light / Dark Mode Toggle Button (Works for all visitors) */}
+          {/* My Requests button for logged-in users */}
+          {currentUser && (
+            <button
+              onClick={onOpenMyRequests}
+              title="Track status of your action/privilege requests"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-cyan-300 bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-500/30 flex items-center gap-1.5 transition-all"
+            >
+              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="hidden sm:inline">My Requests</span>
+            </button>
+          )}
+
+          {/* Light / Dark Mode Toggle Button */}
           <button
             onClick={toggleMode}
             title="Toggle Light/Dark Theme"
@@ -95,15 +123,24 @@ export default function Navbar({
             {theme.mode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {/* Add Project Button (Available to Authenticated Users Only) */}
+          {/* Add Project Button */}
           {currentUser && (
             <button
-              onClick={onOpenAddModal}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-md hover:brightness-110 active:scale-95"
-              style={{ backgroundColor: 'var(--color-brand-500)' }}
+              onClick={handleAddProjectClick}
+              title={hasPermission('canAddProject') ? "Add a new project" : "Request permission from Admin to add project"}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${
+                hasPermission('canAddProject') 
+                  ? 'hover:brightness-110' 
+                  : 'bg-slate-800 border border-amber-500/40 text-amber-300 hover:bg-slate-700'
+              }`}
+              style={hasPermission('canAddProject') ? { backgroundColor: 'var(--color-brand-500)' } : {}}
             >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Add Project</span>
+              {hasPermission('canAddProject') ? (
+                <PlusCircle className="w-3.5 h-3.5" />
+              ) : (
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+              )}
+              <span>{hasPermission('canAddProject') ? 'Add Project' : 'Request Add Project'}</span>
             </button>
           )}
 

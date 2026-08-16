@@ -16,8 +16,11 @@ import AdminDashboard from './components/AdminPanel/AdminDashboard';
 import AuthModal from './components/AuthModal';
 import AddPortfolioModal from './components/AddPortfolioModal';
 import EditPortfolioModal from './components/EditPortfolioModal';
+import RequestActionModal from './components/RequestActionModal';
+import MyRequestsModal from './components/MyRequestsModal';
 import Footer from './components/Footer';
 import { useTheme } from './context/ThemeContext';
+import { useAuth } from './context/AuthContext';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('showcase'); // 'showcase' | 'admin'
@@ -30,10 +33,17 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [defaultAddCategory, setDefaultAddCategory] = useState('');
   
+  // Request Modals State
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestPermissionType, setRequestPermissionType] = useState('canAddProject');
+  const [requestTitle, setRequestTitle] = useState('Request Project Addition Permission');
+  const [isMyRequestsOpen, setIsMyRequestsOpen] = useState(false);
+
   // Edit Modal State
   const [editingItem, setEditingItem] = useState(null);
 
   const { theme } = useTheme();
+  const { hasPermission } = useAuth();
 
   // 1. Listen for dynamic Categories from Firestore in real-time
   useEffect(() => {
@@ -93,6 +103,11 @@ export default function App() {
 
   // Delete Portfolio Item
   const handleDeletePortfolioItem = async (itemId) => {
+    if (!hasPermission('canDeleteProject')) {
+      handleOpenRequestPermission('canDeleteProject', 'Request Permission to Delete Projects');
+      return;
+    }
+
     if (window.confirm("Are you sure you want to delete this portfolio project?")) {
       try {
         await deleteDoc(doc(db, 'portfolio_items', itemId));
@@ -105,12 +120,26 @@ export default function App() {
 
   // Trigger Edit Item
   const handleEditPortfolioItem = (item) => {
+    if (!hasPermission('canEditProject')) {
+      handleOpenRequestPermission('canEditProject', 'Request Permission to Edit Projects');
+      return;
+    }
     setEditingItem(item);
   };
 
   const handleOpenAddModal = (catId = '') => {
+    if (!hasPermission('canAddProject')) {
+      handleOpenRequestPermission('canAddProject', 'Request Permission to Add Projects');
+      return;
+    }
     setDefaultAddCategory(catId);
     setIsAddModalOpen(true);
+  };
+
+  const handleOpenRequestPermission = (permType = 'canAddProject', title = 'Request Action Privilege') => {
+    setRequestPermissionType(permType);
+    setRequestTitle(title);
+    setIsRequestModalOpen(true);
   };
 
   // Only pass categories that contain items to HeroBanner pill selection
@@ -129,6 +158,8 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenAddModal={() => handleOpenAddModal()}
+        onOpenMyRequests={() => setIsMyRequestsOpen(true)}
+        onRequestPermission={handleOpenRequestPermission}
       />
 
       {/* Main Content View */}
@@ -177,6 +208,18 @@ export default function App() {
         onClose={() => setEditingItem(null)}
         item={editingItem}
         categories={categories}
+      />
+
+      <RequestActionModal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+        defaultRequestType={requestPermissionType}
+        defaultRequestTitle={requestTitle}
+      />
+
+      <MyRequestsModal
+        isOpen={isMyRequestsOpen}
+        onClose={() => setIsMyRequestsOpen(false)}
       />
     </div>
   );

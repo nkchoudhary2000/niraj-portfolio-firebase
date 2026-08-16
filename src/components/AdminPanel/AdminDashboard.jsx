@@ -1,13 +1,29 @@
-import React, { useState } from 'react';
-import { Users, FolderTree, Palette, ShieldAlert } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, FolderTree, Palette, ShieldAlert, UserCheck } from 'lucide-react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import UserManager from './UserManager';
 import CategoryManager from './CategoryManager';
 import ThemeManager from './ThemeManager';
+import ActionRequestsManager from './ActionRequestsManager';
 
 export default function AdminDashboard({ categories }) {
   const [activeTab, setActiveTab] = useState('users');
+  const [pendingCount, setPendingCount] = useState(0);
   const { isAdmin } = useAuth();
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const reqRef = collection(db, 'action_requests');
+    const q = query(reqRef, where('status', '==', 'pending'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setPendingCount(snapshot.size);
+    }, (err) => console.warn("Pending count listener notice:", err));
+
+    return () => unsubscribe();
+  }, [isAdmin]);
 
   if (!isAdmin) {
     return (
@@ -34,7 +50,7 @@ export default function AdminDashboard({ categories }) {
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Manage user roles, dynamic category rows, and global theme customization.
+            Manage user roles, action privileges, user permission requests, dynamic category rows, and global theme customization.
           </p>
         </div>
       </div>
@@ -50,7 +66,24 @@ export default function AdminDashboard({ categories }) {
           }`}
         >
           <Users className="w-4 h-4 text-cyan-400" />
-          <span>User Role Management</span>
+          <span>User Privileges & Roles</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('requests')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 relative ${
+            activeTab === 'requests'
+              ? 'bg-slate-800 text-white shadow-lg border border-white/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+          }`}
+        >
+          <UserCheck className="w-4 h-4 text-purple-400" />
+          <span>Action Requests & Approvals</span>
+          {pendingCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-slate-950 animate-pulse">
+              {pendingCount}
+            </span>
+          )}
         </button>
 
         <button
@@ -81,6 +114,7 @@ export default function AdminDashboard({ categories }) {
       {/* Tab Views */}
       <div className="pt-4">
         {activeTab === 'users' && <UserManager />}
+        {activeTab === 'requests' && <ActionRequestsManager />}
         {activeTab === 'categories' && <CategoryManager categories={categories} />}
         {activeTab === 'theme' && <ThemeManager />}
       </div>
