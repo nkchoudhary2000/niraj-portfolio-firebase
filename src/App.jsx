@@ -191,7 +191,7 @@ export default function App() {
             />
           </>
         ) : (
-          <AdminDashboard categories={categories} />
+          <AdminDashboard categories={categories} portfolioItems={portfolioItems} />
         )}
       </main>
 

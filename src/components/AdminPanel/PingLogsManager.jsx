@@ -123,9 +123,10 @@ export default function PingLogsManager({ portfolioItems = [] }) {
     }
   };
 
-  const livePortfolioItemsCount = portfolioItems.filter(
-    i => i.liveUrl && typeof i.liveUrl === 'string' && i.liveUrl.trim().startsWith('http')
-  ).length;
+  const livePortfolioItemsCount = portfolioItems.filter(i => {
+    const raw = i?.liveUrl || i?.url || i?.link || i?.githubUrl;
+    return raw && typeof raw === 'string' && raw.trim().startsWith('http');
+  }).length;
 
   if (loading) {
     return (

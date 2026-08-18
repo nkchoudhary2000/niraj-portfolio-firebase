@@ -20,10 +20,17 @@ export async function executePortfolioPing(portfolioItems, triggeredBy = 'site_l
     return { success: false, message: 'No portfolio items found.' };
   }
 
-  // Filter items with valid http/https live URLs
-  const itemsToPing = portfolioItems.filter(
-    item => item.liveUrl && typeof item.liveUrl === 'string' && item.liveUrl.trim().startsWith('http')
-  );
+  const getItemUrl = (item) => {
+    const raw = item?.liveUrl || item?.url || item?.link || item?.githubUrl;
+    if (raw && typeof raw === 'string' && raw.trim().startsWith('http')) {
+      return raw.trim();
+    }
+    return null;
+  };
+
+  const itemsToPing = portfolioItems
+    .map(item => ({ item, url: getItemUrl(item) }))
+    .filter(x => x.url !== null);
 
   if (itemsToPing.length === 0) {
     return { success: false, message: 'No valid live webpage links found to ping.' };
@@ -31,8 +38,7 @@ export async function executePortfolioPing(portfolioItems, triggeredBy = 'site_l
 
   // Execute curl/fetch to all URLs simultaneously
   const pingResults = await Promise.all(
-    itemsToPing.map(async (item) => {
-      const url = item.liveUrl.trim();
+    itemsToPing.map(async ({ item, url }) => {
       const startTime = performance.now();
       let status = 'Ping Sent (OK)';
       let isSuccess = true;
