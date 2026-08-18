@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, FolderTree, Palette, ShieldAlert, UserCheck } from 'lucide-react';
+import { Users, FolderTree, Palette, ShieldAlert, UserCheck, Terminal } from 'lucide-react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
@@ -7,8 +7,9 @@ import UserManager from './UserManager';
 import CategoryManager from './CategoryManager';
 import ThemeManager from './ThemeManager';
 import ActionRequestsManager from './ActionRequestsManager';
+import PingLogsManager from './PingLogsManager';
 
-export default function AdminDashboard({ categories }) {
+export default function AdminDashboard({ categories, portfolioItems }) {
   const [activeTab, setActiveTab] = useState('users');
   const [pendingCount, setPendingCount] = useState(0);
   const { isAdmin } = useAuth();
@@ -50,7 +51,7 @@ export default function AdminDashboard({ categories }) {
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Manage user roles, action privileges, user permission requests, dynamic category rows, and global theme customization.
+            Manage user roles, action privileges, user permission requests, dynamic category rows, daily website curl logs, and global theme customization.
           </p>
         </div>
       </div>
@@ -87,6 +88,18 @@ export default function AdminDashboard({ categories }) {
         </button>
 
         <button
+          onClick={() => setActiveTab('ping_logs')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'ping_logs'
+              ? 'bg-slate-800 text-white shadow-lg border border-white/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+          }`}
+        >
+          <Terminal className="w-4 h-4 text-cyan-400" />
+          <span>Daily Curl & Ping Logs</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('categories')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
             activeTab === 'categories'
@@ -115,9 +128,11 @@ export default function AdminDashboard({ categories }) {
       <div className="pt-4">
         {activeTab === 'users' && <UserManager />}
         {activeTab === 'requests' && <ActionRequestsManager />}
+        {activeTab === 'ping_logs' && <PingLogsManager portfolioItems={portfolioItems} />}
         {activeTab === 'categories' && <CategoryManager categories={categories} />}
         {activeTab === 'theme' && <ThemeManager />}
       </div>
     </div>
   );
 }
+

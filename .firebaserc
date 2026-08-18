@@ -1,6 +1,6 @@
 {
   "projects": {
-    "niraj-portfolio-latest": "niraj-portfolio-a7011"
+    "default": "niraj-portfolio-a7011"
   },
   "targets": {},
   "etags": {}

@@ -21,6 +21,7 @@ import MyRequestsModal from './components/MyRequestsModal';
 import Footer from './components/Footer';
 import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
+import { checkAndRunDailyPing } from './utils/pingService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('showcase'); // 'showcase' | 'admin'
@@ -48,9 +49,8 @@ export default function App() {
   // 1. Listen for dynamic Categories from Firestore in real-time
   useEffect(() => {
     const categoriesRef = collection(db, 'categories');
-    const q = query(categoriesRef, orderBy('order', 'asc'));
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
+    const unsubscribe = onSnapshot(categoriesRef, async (snapshot) => {
       if (snapshot.empty) {
         await seedDefaultCategories();
       } else {
@@ -58,6 +58,7 @@ export default function App() {
         snapshot.forEach((docSnap) => {
           catList.push({ id: docSnap.id, ...docSnap.data() });
         });
+        catList.sort((a, b) => (a.order || 0) - (b.order || 0));
         setCategories(catList);
       }
     }, (err) => console.error("Categories snapshot error:", err));
@@ -79,6 +80,13 @@ export default function App() {
 
     return () => unsubscribe();
   }, []);
+
+  // 3. Auto-curl daily check when site loads and portfolio items are fetched
+  useEffect(() => {
+    if (portfolioItems && portfolioItems.length > 0) {
+      checkAndRunDailyPing(portfolioItems);
+    }
+  }, [portfolioItems]);
 
   // Initial Seed Helper: Categories
   const seedDefaultCategories = async () => {
