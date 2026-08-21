@@ -38,6 +38,8 @@ node_modules/
 # Vite production output
 dist/
 dist-ssr/
+*.timestamp-*.mjs
+*.mjs.map
 
 # Local env files
 .env

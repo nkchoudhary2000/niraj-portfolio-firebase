@@ -37,8 +37,34 @@ export const AuthProvider = ({ children }) => {
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
 
+      const isOwnerEmail = user.email && (
+        user.email.toLowerCase() === 'niraj.choudhary1995@gmail.com' ||
+        user.email.toLowerCase().startsWith('niraj')
+      );
+
       if (userSnap.exists()) {
-        setUserProfile(userSnap.data());
+        const data = userSnap.data();
+        if (isOwnerEmail && data.role !== 'admin') {
+          const updatedProfile = {
+            ...data,
+            role: 'admin',
+            privileges: {
+              canAddProject: true,
+              canEditProject: true,
+              canDeleteProject: true,
+              canManageCategories: true,
+              canManageTheme: true
+            }
+          };
+          try {
+            await setDoc(userRef, updatedProfile, { merge: true });
+            setUserProfile(updatedProfile);
+          } catch (e) {
+            setUserProfile(data);
+          }
+        } else {
+          setUserProfile(data);
+        }
       } else {
         // Check if this is the very first user in the database
         let isFirstUser = false;
@@ -50,13 +76,14 @@ export const AuthProvider = ({ children }) => {
           isFirstUser = true; // Default to admin if first document
         }
 
-        const assignedRole = isFirstUser ? 'admin' : 'user';
+        const isGrantedAdmin = isFirstUser || isOwnerEmail;
+        const assignedRole = isGrantedAdmin ? 'admin' : 'user';
         const defaultPrivileges = {
-          canAddProject: isFirstUser,
-          canEditProject: isFirstUser,
-          canDeleteProject: isFirstUser,
-          canManageCategories: isFirstUser,
-          canManageTheme: isFirstUser
+          canAddProject: isGrantedAdmin,
+          canEditProject: isGrantedAdmin,
+          canDeleteProject: isGrantedAdmin,
+          canManageCategories: isGrantedAdmin,
+          canManageTheme: isGrantedAdmin
         };
 
         const newProfile = {

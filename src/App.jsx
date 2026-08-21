@@ -152,7 +152,12 @@ export default function App() {
 
   // Only pass categories that contain items to HeroBanner pill selection
   const categoriesWithItems = categories.filter(category => 
-    portfolioItems.some(item => item.categoryId === category.id)
+    portfolioItems.some(item => 
+      item.categoryId === category.id || 
+      item.categoryId === category.name || 
+      item.category === category.name ||
+      item.category === category.id
+    )
   );
 
   return (

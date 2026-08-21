@@ -14,22 +14,39 @@ export default function PortfolioGrid({
 }) {
   const { currentUser } = useAuth();
   
+  const matchCategory = (item, cat) => {
+    if (!item || !cat) return false;
+    return item.categoryId === cat.id || 
+           item.categoryId === cat.name || 
+           item.category === cat.name ||
+           item.category === cat.id;
+  };
+
   // Filter portfolio items based on selected category pill
   const filteredItems = portfolioItems.filter(item => {
-    return selectedCategory === 'all' || item.categoryId === selectedCategory;
+    if (selectedCategory === 'all') return true;
+    const cat = categories.find(c => c.id === selectedCategory);
+    if (!cat) return item.categoryId === selectedCategory;
+    return matchCategory(item, cat);
   });
 
-  // Group items by category
+  // Active categories based on selected category pill
   const activeCategories = selectedCategory === 'all' 
     ? categories 
     : categories.filter(c => c.id === selectedCategory);
 
-  // Filter categories to ONLY include those with active portfolio items
-  const nonEmpytCategories = activeCategories.filter(category => 
-    filteredItems.some(item => item.categoryId === category.id)
-  );
+  // Group matched items into known categories
+  const categoriesWithItems = activeCategories.map(cat => ({
+    ...cat,
+    items: filteredItems.filter(item => matchCategory(item, cat))
+  })).filter(cat => cat.items.length > 0);
 
-  const hasAnyItems = nonEmpytCategories.length > 0;
+  // Catch any items that didn't match any known category (so existing records are never lost)
+  const uncategorizedItems = (selectedCategory === 'all')
+    ? filteredItems.filter(item => !categories.some(cat => matchCategory(item, cat)))
+    : [];
+
+  const hasAnyItems = categoriesWithItems.length > 0 || uncategorizedItems.length > 0;
 
   if (!hasAnyItems) {
     return (
@@ -52,8 +69,8 @@ export default function PortfolioGrid({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-12">
-      {nonEmpytCategories.map((category) => {
-        const categoryItems = filteredItems.filter(item => item.categoryId === category.id);
+      {categoriesWithItems.map((category) => {
+        const categoryItems = category.items;
 
         return (
           <section key={category.id} className="space-y-4">
@@ -102,6 +119,41 @@ export default function PortfolioGrid({
           </section>
         );
       })}
+
+      {/* Fallback Section for Uncategorized / Legacy items */}
+      {uncategorizedItems.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-white/10">
+            <div className="flex items-center gap-2.5">
+              <div 
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0 bg-slate-700"
+              >
+                <FolderGit2 className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight flex items-center gap-2">
+                <span>General Projects</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-semibold border border-white/5">
+                  {uncategorizedItems.length}
+                </span>
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+            <AnimatePresence>
+              {uncategorizedItems.map((item) => (
+                <PortfolioCard
+                  key={item.id}
+                  item={item}
+                  categoryName="General"
+                  onDelete={onDeleteCategoryItem}
+                  onEdit={onEditCategoryItem}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
